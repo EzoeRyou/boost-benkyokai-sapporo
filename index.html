@@ -1,0 +1,527 @@
+<!doctype html>
+<html>
+
+<head>
+<title>
+スタックからのメモリ確保の標準化
+</title>
+
+		<meta charset="utf-8" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+
+<section>
+<h1>
+スタックからのメモリ確保の標準化
+</h1>
+
+<p>
+江添亮<br />
+仕事: C++エヴァンジェリスト(ドワンゴ)<br>
+<a href="http://cpplover.blogspot.jp/">http://cpplover.blogspot.jp/</a><br />
+boostcpp@gmail.com<br />
+GitHub: <a href="https://github.com/EzoeRyou">EzoeRyou</a>
+</p>
+</section>
+
+    <section id="themes" >
+					<h2>Themes</h2>
+					<p>
+
+						<a href="?theme=sky#/themes">Sky</a> -
+						<a href="?theme=beige#/themes">Beige</a> -
+						<a href="?theme=simple#/themes">Simple</a> -
+						<a href="?theme=serif#/themes">Serif</a> -
+						<a href="?theme=night#/themes">Night</a> -
+						<a href="?#/themes">Default</a>
+					</p>
+    </section>
+
+    <section id="transitions">
+        <h2>Transition Styles</h2>
+        <p>
+
+            <a href="?transition=cube#/transitions">Cube</a> -
+            <a href="?transition=page#/transitions">Page</a> -
+            <a href="?transition=concave#/transitions">Concave</a> -
+            <a href="?transition=zoom#/transitions">Zoom</a> -
+            <a href="?transition=linear#/transitions">Linear</a> -
+            <a href="?transition=fade#/transitions">Fade</a> -
+            <a href="?transition=none#/transitions">None</a> -
+            <a href="?#/transitions">Default</a>
+        </p>
+</section>
+
+</section>
+
+
+<section>
+<h2>C++のメモリの種類</h2>
+
+<ul>
+<li>静的ストレージ</li>
+<li>スレッドストレージ</li>
+<li>自動ストレージ</li>
+<li>動的ストレージ</li>
+</ul>
+</section>
+
+<section>
+<h2>静的ストレージ</h2>
+
+<p>
+名前空間スコープの変数、static指定されたクラススコープ、関数のブロックスコープの変数など
+</p>
+
+<p>
+よくある実装例
+</p>
+
+<p>
+プログラムファイルに格納
+</p>
+
+<p>
+例：ELFにおける.dataや.bss
+</p>
+</section>
+
+<section>
+<h2>スレッドストレージ</h2>
+
+<p>
+thread_local指定された変数
+</p>
+
+<p>
+よくある実装例
+</p>
+
+<p>
+プログラムファイルに格納
+</p>
+
+<p>
+例：ELFにおける.tdataや.tbss
+</p>
+</section>
+
+<section>
+<h2>自動ストレージ</h2>
+
+<p>
+いわゆるローカル変数
+</p>
+
+<p>
+よくある実装例
+</p>
+
+<p>
+スタックから確保
+</p>
+</section>
+
+<section>
+<h2>動的ストレージ</h2>
+
+<p>
+実行時に動的なサイズのストレージを確保できる
+</p>
+
+<p>
+よくある実装例
+</p>
+
+<p>
+ヒープと呼ばれる管理されたメモリ空間から確保
+</p>
+
+</section>
+
+<section>
+<h2>スタック</h2>
+
+<p>
+よくある実装
+</p>
+<p>
+確保済みの連続したメモリとスタックポインターの増減で実装
+</p>
+
+<p>
+確保、解放がとても速い
+</p>
+
+</section>
+
+<section>
+<h2>ヒープ</h2>
+
+<p>
+実装は様々
+</p>
+
+<p>
+大きな連続したメモリ領域を管理して確保
+</p>
+
+<p>
+一般的に、スタックより遅い
+</p>
+</section>
+
+<section>
+<h2>要望</h2>
+
+<p>
+速いスタックから動的にストレージを確保したい
+</p>
+</section>
+
+<section>
+<h2>alloca</h2>
+
+<pre><code>template &lt; typename T &gt;
+void f()
+{
+    void * p = alloca( sizeof(T) ) ;
+    T * t = new(p) T() ;
+
+    T-&gt;~T() ;
+}
+</code></pre>
+</section>
+
+<section>
+<h2>allocaの問題点</h2>
+
+<ul>
+<li>型安全ではない</li>
+<li>コンストラクター、デストラクターの面倒を見てくれない</li>
+</ul>
+</section>
+
+<section>
+<h2>動的ストレージの問題点</h2>
+
+<p>
+遅い
+</p>
+</section>
+
+<section>
+<h2>実行時サイズ配列</h2>
+
+<p>
+C++14に追加される予定だった
+</p>
+
+<pre><code>void f( std::size_t size )
+{
+    char a[ size ] ;
+}
+</code></pre>
+</section>
+
+<section>
+<h2>dynarray</h2>
+
+<p>
+C++14に追加される予定だった
+</p>
+
+<pre><code>void f( std::size_t size )
+{
+    std::dynarray&lt;char&gt; a( size ) ;
+}
+</code></pre>
+</section>
+
+<section>
+<h2>スイスのせいでTS落ち</h2>
+
+<blockquote>
+<p>
+コメント
+</p>
+
+<p>
+C++14はマイナー新機能を含むバグ修正リリースが目的であったはずだ
+</p>
+
+<p>
+提案する変更
+</p>
+
+<p>
+規格の品質に悪影響を及ぼす新機能をすべて取り除け
+</p>
+</blockquote>
+</section>
+
+<section>
+<h2>悲しい</h2>
+
+<p>
+optionalさんも巻き添えになった
+</p>
+</section>
+
+<section>
+<h2>実行時サイズ配列の問題点</h2>
+
+<p>
+データメンバーとしては使えず、直接使わなければならない
+</p>
+
+<p>
+実行時サイズ配列を使って
+</p>
+
+<p>
+dynarrayを実装することは出来ない
+</p>
+</section>
+
+<section>
+<h2>dynarrayの問題点</h2>
+
+<p>
+データメンバーなど、スタック確保できないところで使うと
+</p>
+
+<p>
+自動的に動的ストレージから確保される
+</p>
+
+<p>
+スタックから確保したければ、直接使わなければならない
+</p>
+
+</section>
+
+<section>
+<h2>直接使うことの問題点</h2>
+
+<p>
+Abstractionができない
+</p>
+
+<p>
+つまり、クラスでラップして使えない
+</p>
+</section>
+
+<section>
+<h2>Abstraction可能な提案</h2>
+
+<p>
+<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2014/n3875.pdf">N3875</a>
+</p>
+
+<p>
+実行時サイズ配列をデータメンバーとして使える提案
+</p>
+
+</section>
+
+<section>
+<h2>例</h2>
+
+<pre><code>struct Foo
+{
+    Foo( std::size_t size ) : v[size]{}
+    { }
+
+    char v[] ;
+} ;
+</code></pre>
+</section>
+
+<section>
+<h2>制約</h2>
+
+<p>
+実行時サイズ配列をデータメンバーとして持つクラスは
+</p>
+
+<p>
+自動ストレージ上にしか構築できない
+</p>
+</section>
+
+<section>
+<h2>大前提崩壊</h2>
+
+<p>
+C++では、型はどのストレージ上にも構築できる
+</p>
+
+<p>
+N3875提案が採用されれば、もはや成り立たない
+</p>
+</section>
+
+<section>
+<h2>dynarray To the Rescue!</h2>
+
+<p>
+dynarrayならば、どのストレージ上にも構築できる
+</p>
+
+<p>
+実装にコンパイラーマジックが必要
+</p>
+
+<p>
+絶対にスタックに確保されて欲しい需要には答えられない
+</p>
+</section>
+
+<section>
+<h2>そもそも</h2>
+
+<p>
+C++では、オブジェクトは明示的に破棄できる
+</p>
+
+<p>
+C++では、オブジェクトは明示的に構築できる
+</p>
+
+<p>
+お分かりか？
+</p>
+</section>
+
+<section>
+<pre><code>// ネストした確保
+void f( std::dynarray&lt;int&gt; &amp; r )
+{
+    r.~dynarray() ; // 破棄
+    // 別のサイズで再確保
+    new(r) std::dynarray&lt;int&gt;(2) ;
+}
+
+int main()
+{
+    std::dynarray&lt;int&gt; a(1) ;
+    f( a ) ;
+}
+</code></pre>
+</section>
+
+<section>
+<h2>大前提崩壊</h2>
+
+<p>
+既存のC++では、これは当然できる
+</p>
+
+<p>
+しかし、スタック確保の特性を考えると、できない
+</p>
+
+<p>
+例外は作りたくない
+</p>
+</section>
+
+<section>
+<h2>ネストされたスタック確保の標準化</h2>
+
+<p>
+スタック確保を標準化するにあたって必要
+</p>
+
+<p>
+まだ何も提案されていない
+</p>
+</section>
+
+<section>
+<h2>参考文献</h2>
+
+<ul>
+<li><a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3899.html">N3899: Nested Allocation</a></li>
+<li><a href="http://www.akkadia.org/drepper/tls.pdf">ELF Handling For Thread-Local Storage</a></li>
+<li><a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2013/n3639.html">N3639: Runtime-sized arrays with automatic storage duration (revision 4)</a></li>
+<li><a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2014/n3875.pdf">N3875: Run-time bounded array data members </a></li>
+</ul>
+</section>
+
+
+
+<section>
+<h2>ドワンゴ広告</h2>
+
+<p>
+このスライド資料はドワンゴ勤務中に書かれた。
+</p>
+
+<p>
+ドワンゴは本物のC++プログラマーを募集しています。
+</p>
+
+<p>
+<a href="http://info.dwango.co.jp/recruit/">http://info.dwango.co.jp/recruit/"</a>
+</p>
+</section>
+
+</div> <!-- class="slides" -->
+</div> <!-- class="reveal" -->
+
+
+<script src="lib/js/head.min.js"></script>
+<script src="js/reveal.min.js"></script>
+
+<script>
+
+    // fire up the Reveal.js 
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        width : "90%",
+        height : "90%",
+
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: "none", // default/cube/page/concave/zoom/linear/fade/none
+
+        // Optional libraries
+        dependencies: [
+            { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+            { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+            { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+        ]
+    });
+
+</script>
+
+
+</body>
+
+</html>
