@@ -89,9 +89,18 @@ GitHub: <a href="https://github.com/EzoeRyou">EzoeRyou</a>
 <section>
 <h2>静的ストレージ</h2>
 
-<p>
-名前空間スコープの変数、static指定されたクラススコープ、関数のブロックスコープの変数など
-</p>
+<ul>
+<li>
+名前空間スコープの変数
+</li>
+<li>
+static指定されたクラススコープ
+</li>
+<li>
+関数のブロックスコープの変数など
+</li>
+</ul>
+
 
 <p>
 よくある実装例
@@ -197,6 +206,18 @@ thread_local指定された変数
 <p>
 速いスタックから動的にストレージを確保したい
 </p>
+
+<p>
+小さなサイズのメモリ領域を
+</p>
+
+<p>
+極めて短時間確保したい
+</p>
+
+<p>
+用途：ゲーム、音声動画圧縮のエンコーダー/デコーダー、数値計算
+</p>
 </section>
 
 <section>
@@ -228,6 +249,25 @@ void f()
 <p>
 遅い
 </p>
+
+<p>
+極小サイズならば
+</p>
+
+<p>それぞれのサイズごとに分けたメモリ領域から
+</p>
+
+<p>
+割り当てるテクニックもある
+</p>
+
+<p>
+でも遅い
+</p>
+</section>
+
+<section>
+<h1>スタックを使わせろ</h1>
 </section>
 
 <section>
@@ -540,6 +580,14 @@ Boost.勉強会 #15 札幌 に発表者として参加することで、ドワ�
 </p>
 </section>
 
+<section>
+<h2>勉強会に呼んでくれ</h2>
+
+<p>
+宣伝になれば全国どこにでも行ける
+</p>
+</section>
+
 
 <section>
 <h2>ドワンゴ広告</h2>
@@ -577,7 +625,7 @@ Boost.勉強会 #15 札幌 に発表者として参加することで、ドワ�
         height : "90%",
 
         theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
-        transition: "none", // default/cube/page/concave/zoom/linear/fade/none
+        transition: "zoom", // default/cube/page/concave/zoom/linear/fade/none
 
         // Optional libraries
         dependencies: [
